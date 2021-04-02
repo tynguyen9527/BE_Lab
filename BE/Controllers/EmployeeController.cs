@@ -6,14 +6,17 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Common.Http;
+using Common.Paganation;
 
 namespace BE.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class EmployeeController : ControllerBase
+    public class EmployeeController : BaseController
     {
         public IEmployeeService _employeeService;
+        string commonResponse = "The Department or Position do not exist";
         public EmployeeController(IEmployeeService employeeService)
         {
             _employeeService = employeeService;
@@ -26,7 +29,7 @@ namespace BE.Controllers
             var result = _employeeService.Insert(dto);
             if (!result)
             {
-                return Ok(false);
+                return CommonResponse<string>(0, commonResponse);
             }
             return Ok(true);
         }
@@ -57,9 +60,9 @@ namespace BE.Controllers
 
 
         [HttpGet("getall")]
-        public IActionResult GetAll()
+        public IActionResult GetAll([FromQuery] SerachPaganationDTO<EmployeeDTO> dto)
         {
-            var result = _employeeService.GetAll();
+            var result = _employeeService.GetAll(dto);
             if (result == null)
             {
                 return Ok(false);

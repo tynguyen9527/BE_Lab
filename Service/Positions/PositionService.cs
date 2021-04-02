@@ -66,7 +66,6 @@ namespace Service.Positions
             {
                 return false;
             }
-            data.Id = dto.Id;
             data.Name = dto.Name;
             _repository.Update(data);
             _unitOfWork.SaveChanges();

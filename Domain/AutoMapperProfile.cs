@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
+using Common.Paganation;
 using Domain.DTO_s;
 using Domain.Entities;
+using System.Collections.Generic;
 
 namespace Domain
 {
@@ -11,9 +13,8 @@ namespace Domain
             CreateMap<Employee, EmployeeDTO>().ReverseMap();
             CreateMap<Department, DepartmentDTO>().ReverseMap();
             CreateMap<Position, PositionDTO>().ReverseMap();
-
-            CreateMap<EmployeeDTO, DepartmentDTO>().ReverseMap();
-            CreateMap<EmployeeDTO, PositionDTO>().ReverseMap();
+            CreateMap<Paganation<EmployeeDTO>, SerachPaganationDTO<EmployeeDTO>>().ReverseMap();
+            CreateMap<List<Employee>, List<EmployeeDTO>>().ReverseMap();
         }
     }
 }

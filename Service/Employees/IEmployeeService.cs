@@ -1,4 +1,5 @@
-﻿using Domain.DTO_s;
+﻿using Common.Paganation;
+using Domain.DTO_s;
 using Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -11,7 +12,7 @@ namespace Service.Employees
 {
     public interface IEmployeeService
     {
-        IQueryable<Employee> GetAll();
+        Paganation<EmployeeDTO> GetAll(SerachPaganationDTO<EmployeeDTO> dto);
 
         bool Insert(EmployeeDTO dto);
 

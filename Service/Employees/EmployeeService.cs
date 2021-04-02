@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Common;
 using Common.Http;
+using Common.Paganation;
 using Data;
 using Domain.DTO_s;
 using Domain.Entities;
@@ -24,9 +25,7 @@ namespace Service.Employees
         private readonly IRepository<Department> _repositoryDepartment;
         private readonly IRepository<Position> _repositoryPosition;
         private readonly IUnitOfWork _unitOfWork;
-        public Department department;
-        public Position position;
-        public Employee employeeId;
+
 
 
         //private DepartmentService _department;
@@ -42,37 +41,88 @@ namespace Service.Employees
             _repositoryDepartment = repositoryDepartment;
             _repositoryPosition = repositoryPosition;
         }
-
-        public IQueryable<Employee> GetAll()
+        public Paganation<EmployeeDTO> GetAll(SerachPaganationDTO<EmployeeDTO> dto)
         {
 
             try
             {
+                var a = new EmployeeDTO();
                 var listEmployee = _repository.Queryable();
-                return listEmployee;
+                var listDepartment = _repositoryDepartment.Queryable();
+                var listPosition = _repositoryPosition.Queryable();
+                var employeeDTO =
+                (from emp in listEmployee
+                 from dep in listDepartment
+                 from pos in listPosition
+                 where emp.DepartmentId == dep.Id && emp.PositionId == pos.Id
+                 select new EmployeeDTO
+                 {
+                     Id = emp.Id,
+                     Name = emp.Name,
+                     PositionName = pos.Name,
+                     DepartmentName = dep.Name
+
+                 }).OrderBy(it => it.DepartmentName)
+                   .ThenBy(it => it.Name)
+                   .Take(dto.Take)
+                   .Skip(dto.Skip)
+                   .ToList();
+                var result = _mapper.Map<SerachPaganationDTO<EmployeeDTO>, Paganation<EmployeeDTO>>(dto);
+                result.Data = employeeDTO;
+                return result;
             }
             catch (Exception ex)
             {
                 throw new Exception($"Couldn't retrieve entities: {ex.Message}");
             }
         }
+        //public List<EmployeeDTO> GetAll()
+        //{
+
+        //    try
+        //    {
+        //        var a = new EmployeeDTO();
+        //        var listEmployee = _repository.Queryable();
+        //        var listDepartment = _repositoryDepartment.Queryable();
+        //        var listPosition = _repositoryPosition.Queryable();
+        //        var employeeDTO = 
+        //        (from emp in listEmployee
+        //        from dep in listDepartment
+        //        from pos in listPosition
+        //        where emp.DepartmentId == dep.Id && emp.PositionId == pos.Id
+        //        select new EmployeeDTO
+        //        {
+        //            Id = emp.Id,
+        //            Name = emp.Name,
+        //            PositionName = pos.Name,
+        //            DepartmentName = dep.Name
+
+        //        }).ToList();
+        //        return employeeDTO;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        throw new Exception($"Couldn't retrieve entities: {ex.Message}");
+        //    }
+        //}
 
         public bool Insert(EmployeeDTO dto)
         {
             var employee = _mapper.Map<EmployeeDTO, Employee>(dto);
             employee.Id = new Guid();
-            department = _repositoryDepartment.Queryable().Where(r => r.Name == dto.DepartmentName).FirstOrDefault();
-            position = _repositoryPosition.Queryable().Where(r => r.Name == dto.PositionName).FirstOrDefault();
-
-
+            var department = _repositoryDepartment.Queryable().Where(r => r.Name == dto.DepartmentName).FirstOrDefault();
+            var position = _repositoryPosition.Queryable().Where(r => r.Name == dto.PositionName).FirstOrDefault();
+            if (department == null || position == null)
+            {
+                return false;
+            }
             employee.DepartmentId = department.Id;
             employee.PositionId = position.Id;
-            if(employee != null)
-            {
-                _repository.Insert(employee);
-                _unitOfWork.SaveChanges();
-            }
 
+
+
+            _repository.Insert(employee);
+            _unitOfWork.SaveChanges();
             return true;
         }
 
@@ -90,18 +140,19 @@ namespace Service.Employees
 
         public bool Update(EmployeeDTO dto)
         {
-            var data = _repository.Find(dto.Id);
-            if (data == null)
+            var employee = _repository.Find(dto.Id);
+            if (employee == null)
             {
                 return false;
             }
-            data.Id = dto.Id;
-            data.Name = dto.Name;
-            var department = _repositoryDepartment.Find(dto.DepartmentName);
-            var position = _repositoryPosition.Find(dto.PositionName);
-            data.Id = department.Id;
-            data.PositionId = position.Id;
-            _repository.Update(data);
+            //employee.Id = dto.Id;
+            employee.Name = dto.Name;
+            var department = _repositoryDepartment.Queryable().Where(r => r.Name == dto.DepartmentName).FirstOrDefault();
+            var position = _repositoryPosition.Queryable().Where(r => r.Name == dto.PositionName).FirstOrDefault();
+
+            employee.DepartmentId = department.Id;
+            employee.PositionId = position.Id;
+            _repository.Update(employee);
             _unitOfWork.SaveChanges();
 
             return true;
